@@ -207,13 +207,24 @@ python predict.py -0.579 44.838 "2026-03-10 06:00"  # Bordeaux
 
 ### From psql (SQL function)
 
+#### Example:
 ```sql
--- Automatic elevation lookup (nearest grid point used as proxy)
 SELECT * FROM predict_temperature(2.352, 48.857, '2026-03-15 12:00+00');
-
--- Supply elevation explicitly (metres)
-SELECT * FROM predict_temperature(5.724, 45.188, '2026-03-15 12:00+00', 212);
 ```
+#### Outcome:
+| `predicted_temp_c` | `k_used` | `query_elevation_m` | `elev_stddev_m` | `neighbours_found` |
+|---|---|---|---|---|
+| 10.90 | 8 | 38.0 | 36.8 | 8 |
+
+#### Example:
+```sql
+SELECT * FROM predict_temperature(2.352, 48.857, '2026-03-15 12:00+00');
+```
+#### Outcome:
+| `predicted_temp_c` | `k_used` | `query_elevation_m` | `elev_stddev_m` | `neighbours_found` |
+|---|---|---|---|---|
+| 10.90 | 8 | 38.0 | 36.8 | 8 |
+
 
 **Output columns**: `predicted_temp_c`, `k_used`, `query_elevation_m`,
 `elev_stddev_m`, `neighbours_found`.
