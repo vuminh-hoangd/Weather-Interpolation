@@ -8,7 +8,7 @@ Hourly weather data (temperature, humidity, rain, soil temperature) is fetched f
 
 The core deliverable benchmarks GiST, B-tree, and BRIN indexes against unindexed
 sequential scans across four spatial and temporal query patterns, and evaluates an
-**adaptive kNN + lapse-rate temperature prediction** model implemented entirely in SQL.
+**adaptive kNN + lapse-rate temperature prediction** model implemented in SQL and Python.
 
 ---
 
