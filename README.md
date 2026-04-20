@@ -211,6 +211,9 @@ python predict.py -0.579 44.838 "2026-03-10 06:00"  # Bordeaux
 -- Automatic elevation lookup (nearest grid point used as proxy)
 SELECT * FROM predict_temperature(2.352, 48.857, '2026-03-15 12:00+00');
 
+Output:
+<img width="1662" height="198" alt="image" src="https://github.com/user-attachments/assets/94794594-f572-4f4f-b872-b885bf6f9a0e" />
+
 -- Supply elevation explicitly (metres)
 SELECT * FROM predict_temperature(5.724, 45.188, '2026-03-15 12:00+00', 212);
 ```
