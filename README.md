@@ -293,7 +293,6 @@ weather-db/
 ├── evaluate_adaptive_k.py         MAE/RMSE comparison of three strategies
 ├── predict.py                     CLI temperature prediction tool
 ├── visualize.py                   France grid map visualisation
-├── migrate_grid.py                Grid migration utility
 └── report.html                    Generated HTML report (auto-created)
 ```
 ## How They All Connect
