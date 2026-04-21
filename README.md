@@ -14,7 +14,7 @@ sequential scans across four spatial and temporal query patterns, and evaluates 
 
 ## Table of Contents
 
-0. [Project structure](#-project-struture)
+0. [Project structure](#0-project-struture)
 1. [Prerequisites](#1-prerequisites)
 2. [Python environment](#2-python-environment)
 3. [Database setup](#3-database-setup)
@@ -47,6 +47,7 @@ Python scripts reference each other and the `sql/` subfolder by relative path.
 | PostGIS extension | 3.x | Install via Stack Builder or `apt install postgis` |
 | Python | 3.11 or 3.12 | |
 | Internet access | — | Open-Meteo APIs (weather + elevation) |
+| Git | - | User needs Git installed to run `git clone` |
 
 ### Install PostGIS (if not already installed)
 
@@ -69,7 +70,7 @@ venv\Scripts\activate
 source venv/bin/activate
 
 # Install dependencies
-pip install pg8000 requests schedule numpy
+pip install pg8000 requests schedule numpy folium
 ```
 
 ---
@@ -94,7 +95,7 @@ psql -U postgres -d imperial_db
 
 ### 3b. Run the SQL setup scripts
 
-From inside `psql` (or using the `-f` flag), execute in this order:
+From inside `psql` (or using the `-f` flag), execute in this order :
 
 ```bash
 psql -U postgres -d imperial_db -f sql/01_schema.sql
@@ -103,6 +104,7 @@ psql -U postgres -d imperial_db -f sql/02_indexes.sql
 psql -U postgres -d imperial_db -f sql/03_seed_france.sql
 psql -U postgres -d imperial_db -f sql/04_predict_function.sql
 ```
+Note: `psql -f` commandes must be run from the terminal inside the `Weather-Interpolation` folder, not from inside psql, otherwise encounter 'file not found' errors.
 
 What each file does:
 
@@ -123,6 +125,8 @@ All Python scripts connect using these defaults (edit the `DB` dict at the top o
 DB = dict(host="localhost", port=5432, database="imperial_db",
           user="postgres", password="Imperial")
 ```
+
+Alternatively, run `python run_demo.py`  to execute all steps automatically.
 
 ---
 
@@ -168,7 +172,7 @@ python generate_report.py
 ```
 
 The report opens automatically when done. If it does not open, open `report.html`
-manually from the project folder.
+manually from the project folder. Possible to take up to 5 minutes to generate. 
 
 To run the benchmarks alone (no HTML output):
 
@@ -293,7 +297,10 @@ weather-db/
 ├── evaluate_adaptive_k.py         MAE/RMSE comparison of three strategies
 ├── predict.py                     CLI temperature prediction tool
 ├── visualize.py                   France grid map visualisation
+├── run_demo.py                    Full pipeline orchestrator — runs all setup steps in one command
+├── dedup_locations.py             Removes duplicate grid point rows and adds a UNIQUE constraint on (lat, lon)
 └── report.html                    Generated HTML report (auto-created)
+
 ```
 ## How They All Connect
 
