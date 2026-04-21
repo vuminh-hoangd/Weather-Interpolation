@@ -98,7 +98,7 @@ psql -U postgres -d imperial_db
 
 ### 3b. Run the SQL setup scripts
 
-From inside `psql` (or using the `-f` flag), execute in this order :
+From the terminal inside the `Weather-Interpolation` folder, execute the `psql -f` commands in order, and not from inside psql:
 
 ```bash
 psql -U postgres -d imperial_db -f sql/01_schema.sql
@@ -107,7 +107,6 @@ psql -U postgres -d imperial_db -f sql/02_indexes.sql
 psql -U postgres -d imperial_db -f sql/03_seed_france.sql
 psql -U postgres -d imperial_db -f sql/04_predict_function.sql
 ```
-Note: `psql -f` commands must be run from the terminal inside the `Weather-Interpolation` folder, not from inside psql. Otherwise, encounter 'file not found' errors.
 
 What each file does:
 
