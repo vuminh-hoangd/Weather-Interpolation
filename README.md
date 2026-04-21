@@ -31,7 +31,7 @@ sequential scans across four spatial and temporal query patterns, and evaluates 
 Clone the repository into a folder of your choice:
 
 ```bash
-cd folder_pathway_paster_here
+cd folder_pathway_paste_here
 git clone https://github.com/chwon9-jpg/Weather-Interpolation.git
 cd Weather-Interpolation
 ```
