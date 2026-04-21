@@ -290,3 +290,29 @@ weather-db/
 ├── migrate_grid.py                Grid migration utility
 └── report.html                    Generated HTML report (auto-created)
 ```
+## How They All Connect
+
+```
+Open-Meteo APIs
+      │
+      ├─── fetch_elevations.py ──► locations.elevation (DB)
+      │
+      └─── ingest.py ────────────► weather_observations (DB)
+                                          │
+                          ┌───────────────┼───────────────┐
+                          │               │               │
+               evaluate_adaptive_k.py  benchmark_runner.py  predict.py
+               (MAE/RMSE results)      (timing results)    (user query)
+                          │               │
+                          └───────────────┘
+                                  │
+                          generate_report.py
+                                  │
+                            report.html
+```
+
+The database is the central hub. `ingest.py` and `fetch_elevations.py` write into it.
+The SQL schema files define its structure. Everything else reads from it — the benchmark
+runner to measure query performance, the evaluate script to compute prediction errors,
+and the predict script to answer user queries. `generate_report.py` ties the benchmark
+and evaluation results together into the final HTML deliverable.
