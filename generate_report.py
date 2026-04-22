@@ -323,8 +323,6 @@ HTML = """<!DOCTYPE html>
 """
 
 
-# Pre-computed evaluation results (March 2026)
-# (city, fixed_mae, adaptive_mae, lapse_mae, fixed_rmse, adaptive_rmse, lapse_rmse)
 STRATEGY_RESULTS = [
     ("Avignon",    0.834, 0.739, 0.586, 1.264, 1.071, 0.789),
     ("Bordeaux",   0.310, 0.325, 0.326, 0.425, 0.444, 0.436),
