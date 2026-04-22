@@ -1,8 +1,7 @@
 """
 dedup_locations.py
-Removes duplicate location rows (same lat/lon), keeping the one that has
-observations (or lowest ID if none). Then adds a UNIQUE constraint on (lat, lon)
-to prevent future duplicates.
+Removes duplicate location rows (same lat/lon), keeping the one that has 
+observations. Then adds a UNIQUE constraint on (lat, lon) to prevent future duplicates.
 """
 
 import pg8000.dbapi as pg
@@ -11,12 +10,11 @@ from benchmark_runner import DB
 conn = pg.connect(**DB)
 cur  = conn.cursor()
 
-# Count before
 cur.execute("SELECT COUNT(*) FROM locations")
 before = cur.fetchone()[0]
 print(f"Locations before: {before:,}")
 
-# Delete duplicates — keep the row with observations (or min id if no observations)
+# Delete duplicates
 cur.execute("""
     DELETE FROM locations
     WHERE id NOT IN (
@@ -35,7 +33,6 @@ deleted = cur.rowcount
 conn.commit()
 print(f"Deleted {deleted:,} duplicate rows.")
 
-# Count after
 cur.execute("SELECT COUNT(*) FROM locations")
 after = cur.fetchone()[0]
 print(f"Locations after:  {after:,}")
