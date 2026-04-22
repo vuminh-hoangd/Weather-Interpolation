@@ -47,7 +47,6 @@ def fetch_elevation(lon: float, lat: float) -> float:
 
 
 def predict_temperature(lon: float, lat: float, observed_at: datetime) -> dict:
-    # Step 1 — get query point elevation from API
     query_elevation = fetch_elevation(lon, lat)
 
     conn = pg.connect(**DB)
@@ -55,7 +54,6 @@ def predict_temperature(lon: float, lat: float, observed_at: datetime) -> dict:
 
     geog = f"ST_MakePoint({lon}, {lat})::geography"
 
-    # Step 2 — elevation stddev of 20 nearest training points → choose k
     cur.execute(f"""
         SELECT COALESCE(STDDEV(elevation), 0) FROM (
             SELECT elevation FROM locations
@@ -67,7 +65,6 @@ def predict_temperature(lon: float, lat: float, observed_at: datetime) -> dict:
     elev_stddev = float(cur.fetchone()[0])
     k = adaptive_k(elev_stddev)
 
-    # Step 3 — fetch k nearest neighbours with their elevations and distances
     cur.execute(f"""
         SELECT wo.temperature, l.elevation, ST_Distance(l.geog, {geog}) AS dist_m
         FROM training_observations wo
@@ -84,7 +81,6 @@ def predict_temperature(lon: float, lat: float, observed_at: datetime) -> dict:
     if not neighbours:
         return {"error": f"No training data found for {observed_at}. Only March 2026 is available."}
 
-    # Step 4 — apply lapse rate correction then IDW
     total_weight = 0.0
     weighted_sum = 0.0
     for temp, neighbour_elev, dist_m in neighbours:
