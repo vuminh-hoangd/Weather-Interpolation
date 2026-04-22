@@ -36,7 +36,7 @@ git clone https://github.com/chwon9-jpg/Weather-Interpolation.git
 cd Weather-Interpolation
 ```
 
-All files should remain in this single folder. Do not move individual files — the
+All files should remain in this single folder. Do not move individual files. The
 Python scripts reference each other and the `sql/` subfolder by relative path.
 
 ## 1. Prerequisites
@@ -51,7 +51,7 @@ Python scripts reference each other and the `sql/` subfolder by relative path.
 
 ### Install PostGIS (if not already installed)
 
-- **Windows**: run the PostgreSQL installer → Stack Builder → Spatial Extensions → PostGIS
+- **Windows**: run the PostgreSQL installer then Stack Builder then Spatial Extensions → PostGIS
 - **macOS**: `brew install postgis`
 - **Ubuntu/Debian**: `sudo apt install postgresql-15-postgis-3`
 
@@ -98,7 +98,7 @@ psql -U postgres -d imperial_db or \c imperial_db
 
 ### 3b. Run the SQL setup scripts
 
-From the terminal inside the `Weather-Interpolation` folder, execute the `psql -f` commands in order, and not from inside psql (Note that `psql` must already been in PATH):
+From the terminal inside the `Weather-Interpolation` folder, execute the `psql -f` commands in order, and not from inside psql (Note that `psql` must already be in PATH):
 
 ```bash
 psql -U postgres -d imperial_db -f sql/01_schema.sql
@@ -145,7 +145,7 @@ python ingest.py backfill 2026-03
 > **Note**: The script fetches one grid point at a time with a short delay between
 > requests to respect the Open-Meteo rate limit. A progress log is printed to the
 > console and written to `backfill_resume.log`. If interrupted, re-run the same
-> command — it skips grid points that already have data.
+> command; it skips grid points that already have data.
 
 ---
 
@@ -159,7 +159,7 @@ python fetch_elevations.py
 ```
 
 > Processes ~3,800 grid points in batches of 100 with a 3-second delay between
-> batches. Takes ~2 minutes. Safe to re-run — skips rows that already have an
+> batches. Takes ~2 minutes. Safe to re-run as it skips rows that already have an
 > elevation value.
 
 ---
