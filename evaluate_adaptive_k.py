@@ -1,9 +1,9 @@
 """
 evaluate_adaptive_k.py
 Compares three prediction strategies on test zone cities for March 2026:
-  1. Fixed k=5, no lapse rate correction (baseline)
-  2. Adaptive k, no lapse rate correction
-  3. Adaptive k + lapse rate correction
+1. Fixed k=5, (baseline)
+2. Adaptive k, no lapse rate correction
+3. Adaptive k + lapse rate correction
 
 Usage: python evaluate_adaptive_k.py
 """
