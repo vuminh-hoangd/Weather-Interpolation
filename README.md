@@ -61,7 +61,7 @@ Python scripts reference each other and the `sql/` subfolder by relative path.
 
 ```bash
 # Create and activate a virtual environment
-python -m venv venv
+python -m venv venv or python3 -m venv venv
 
 # Windows
 venv\Scripts\activate
@@ -93,12 +93,12 @@ CREATE DATABASE imperial_db;
 Then connect to it:
 
 ```bash
-psql -U postgres -d imperial_db
+psql -U postgres -d imperial_db or \imperial_db
 ```
 
 ### 3b. Run the SQL setup scripts
 
-From the terminal inside the `Weather-Interpolation` folder, execute the `psql -f` commands in order, and not from inside psql:
+From the terminal inside the `Weather-Interpolation` folder, execute the `psql -f` commands in order, and not from inside psql (Note that `psql` must already been in PATH):
 
 ```bash
 psql -U postgres -d imperial_db -f sql/01_schema.sql
@@ -183,6 +183,11 @@ python benchmark_runner.py
 ```
 
 Raw EXPLAIN ANALYZE plans are saved to `benchmark_results/`.
+
+```bash
+python visualize.py
+```
+To view 2D France grid with the 10 test-zone cities with their proportional exclusion radii
 
 ---
 
