@@ -3,8 +3,8 @@
 ## Authors: Hoang Dung Vu Minh and Christopher Won
 
 Hourly weather data (temperature, humidity, rain, soil temperature) is fetched from
-**Open-Meteo** for a 0.18° latitude/longitude grid covering France (~3,800 points,
-~20 km spacing) and stored in **PostgreSQL + PostGIS** with monthly table partitioning.
+**Open-Meteo** for a 0.18° latitude/longitude grid covering France (3,800 points,
+20 km spacing) and stored in **PostgreSQL + PostGIS** with monthly table partitioning.
 
 The core deliverable benchmarks GiST, B-tree, and BRIN indexes against unindexed
 sequential scans across four spatial and temporal query patterns, and evaluates an
@@ -115,7 +115,7 @@ What each file does:
 | `01_schema.sql` | Creates `locations`, `weather_observations` (partitioned), `test_zones`, and the `training_observations` view |
 | `04_monthly_partition.sql` | Creates the March 2026 (and April 2026) monthly partitions |
 | `02_indexes.sql` | Creates the GiST, BRIN, B-tree, and composite indexes |
-| `03_seed_france.sql` | Inserts the ~3,800 France grid points and marks the 10 test-zone cities |
+| `03_seed_france.sql` | Inserts the 3,800 France grid points and marks the 10 test-zone cities |
 | `04_predict_function.sql` | Creates the `predict_temperature()` stored function |
 
 ### 3c. Database credentials
@@ -138,7 +138,7 @@ This fetches hourly weather data from the Open-Meteo Archive API for the full
 France grid and inserts it into PostgreSQL.
 
 ```bash
-# Backfill one full month (run once — takes ~20–40 minutes for March 2026)
+# Backfill one full month (run once — takes 20–40 minutes for March 2026)
 python ingest.py backfill 2026-03
 ```
 
@@ -158,8 +158,8 @@ Open-Meteo Elevation API. Required for the adaptive kNN + lapse-rate prediction.
 python fetch_elevations.py
 ```
 
-> Processes ~3,800 grid points in batches of 100 with a 3-second delay between
-> batches. Takes ~2 minutes. Safe to re-run — skips rows that already have an
+> Processes 3,800 grid points in batches of 100 with a 3-second delay between
+> batches. Takes 2 minutes. Safe to re-run — skips rows that already have an
 > elevation value.
 
 ---
@@ -211,7 +211,7 @@ The three strategies compared are:
 > query point is fetched directly from the Open-Meteo Elevation API for the exact
 > (lon, lat) coordinate, giving a precise lapse-rate correction. When querying via
 > the SQL function (`predict_temperature()`), the elevation is estimated using the
-> nearest grid point as a proxy (~20 km away). For flat regions like Paris this
+> nearest grid point as a proxy (20 km away). For flat regions like Paris this
 > difference is negligible, but in complex terrain such as the Alps or Pyrenees,
 > the proxy elevation can deviate significantly from the true elevation, leading to
 > a less accurate lapse-rate correction and therefore a less accurate temperature
