@@ -154,16 +154,9 @@ Restart PostgreSQL:
 sudo service postgresql restart
 ```
 
-You can now connect with:
-
-```bash
-psql -U postgres -d imperial_db
-```
-
-
 ### 3b. Run the SQL setup scripts
 
-From the terminal inside the `Weather-Interpolation` folder, execute the `psql -f` commands in order, and not from inside psql:
+From the terminal inside the `Weather-Interpolation` folder, execute the `psql -f` commands in order, and NOT from inside psql:
 
 ```bash
 psql -U postgres -d imperial_db -f sql/01_schema.sql
