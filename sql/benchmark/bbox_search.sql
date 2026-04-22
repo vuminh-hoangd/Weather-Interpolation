@@ -1,11 +1,6 @@
 -- benchmark/bbox_search.sql
 -- Compares bounding-box search performance with no index vs. GiST index.
 -- Target: all grid points inside southern France (lat 42–45°N, lon -2–8°E).
---
--- The && operator tests whether two geography bounding boxes overlap.
--- With a GiST index this becomes an R-tree lookup; without it, every
--- row's bounding box is computed and compared (sequential scan).
-
 
 -- BASELINE: sequential scan
 DROP INDEX IF EXISTS idx_locations_geog_gist;
