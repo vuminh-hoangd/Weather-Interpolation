@@ -1,8 +1,7 @@
 """
 generate_report.py
 Runs all benchmarks and kNN prediction evaluation,
-then produces a self-contained HTML report (report.html).
-
+then produces a self-contained HTML report: report.html
 Requirements: pip install pg8000
 Usage:        python generate_report.py
 """
