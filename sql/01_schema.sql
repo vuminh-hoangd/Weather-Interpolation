@@ -27,10 +27,7 @@ CREATE TABLE IF NOT EXISTS test_zones (
 CREATE TABLE IF NOT EXISTS weather_observations (
     location_id INTEGER     NOT NULL REFERENCES locations(id) ON DELETE CASCADE,
     observed_at TIMESTAMPTZ NOT NULL,
-    temperature DOUBLE PRECISION,   -- °C  (2 m air temperature)
-    humidity    DOUBLE PRECISION,   -- %   (relative humidity at 2 m)
-    rain        DOUBLE PRECISION,   -- mm  (hourly precipitation)
-    soil_temp   DOUBLE PRECISION,   -- °C  (soil temperature 7–28 cm depth)
+    temperature DOUBLE PRECISION, 
     PRIMARY KEY (location_id, observed_at)
 ) PARTITION BY RANGE (observed_at);
 
