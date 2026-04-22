@@ -14,7 +14,6 @@ import os
 import pg8000.dbapi as pg
 from datetime import datetime
 
-# ─── CONFIG ──────────────────────────────────────────────────────────────────
 
 DB = dict(host="localhost", port=5432, database="imperial_db",
           user="postgres", password="Imperial")
@@ -23,7 +22,6 @@ TARGET_TIME = "2026-03-15 12:00:00+00"
 RUNS        = 3
 OUTPUT_DIR  = "benchmark_results"
 
-# ─── BENCHMARK DEFINITIONS ───────────────────────────────────────────────────
 
 BENCHMARKS = [
     {
@@ -220,7 +218,6 @@ BENCHMARKS = [
     },
 ]
 
-# ─── HELPERS ─────────────────────────────────────────────────────────────────
 
 def run_explain(conn, setup_stmts: list[str], query_sql: str,
                 runs: int = RUNS) -> tuple[float, str]:
@@ -273,7 +270,6 @@ def print_table(benchmark: dict, results: list[dict]) -> None:
     print(div)
 
 
-# ─── MAIN ────────────────────────────────────────────────────────────────────
 
 def run_all() -> list[dict]:
     os.makedirs(OUTPUT_DIR, exist_ok=True)
