@@ -20,10 +20,10 @@ import pg8000.dbapi as pg
 from datetime import datetime, timezone
 from ingest import DB
 
-K_MIN        = 3
-K_MAX        = 8
-ELEV_SCALE   = 400.0
-LAPSE_RATE   = 0.0065  
+K_MIN = 3
+K_MAX = 8
+ELEV_SCALE = 400.0
+LAPSE_RATE = 0.0065  
 
 
 def adaptive_k(elev_stddev: float) -> int:
