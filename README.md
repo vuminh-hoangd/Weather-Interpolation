@@ -96,6 +96,71 @@ Then connect to it:
 psql -U postgres -d imperial_db
 ```
 
+### 3a. Notes by operating system
+
+**Windows**
+
+`psql` is not available in PowerShell or Command Prompt by default. You have two options:
+- **Recommended**: Use **WSL (Ubuntu)** — install PostgreSQL inside Ubuntu via `sudo apt install postgresql`, then run all `psql` commands from the Ubuntu terminal
+- **Alternative**: Install PostgreSQL via the [EDB installer](https://www.enterprisedb.com/downloads/postgres-postgresql-downloads), which includes Command Line Tools and adds `psql` to PATH
+
+**macOS**
+
+If installed via Homebrew (`brew install postgresql@16`), `psql` should be available immediately. If not, add it to your PATH:
+
+```bash
+export PATH="/opt/homebrew/opt/postgresql@16/bin:$PATH"
+```
+
+**Linux / WSL (Ubuntu)**
+
+Install PostgreSQL if not already installed:
+
+```bash
+sudo apt update && sudo apt install postgresql postgresql-contrib
+sudo service postgresql start
+```
+
+Then set the password to `Imperial` so it matches the project credentials:
+
+```bash
+sudo -u postgres psql
+```
+
+Inside psql, run:
+
+```sql
+ALTER USER postgres PASSWORD 'Imperial';
+\q
+```
+
+Then enable password authentication. Open the config file:
+
+```bash
+sudo nano /etc/postgresql/*/main/pg_hba.conf
+```
+
+Find this line:
+
+```
+local   all   postgres   peer
+```
+
+Change `peer` to `md5`, then save with `Ctrl+O` → `Enter` → `Ctrl+X`.
+
+Restart PostgreSQL:
+
+```bash
+sudo service postgresql restart
+```
+
+You can now connect with:
+
+```bash
+psql -U postgres -d imperial_db
+```
+
+
 ### 3b. Run the SQL setup scripts
 
 From the terminal inside the `Weather-Interpolation` folder, execute the `psql -f` commands in order, and not from inside psql:
