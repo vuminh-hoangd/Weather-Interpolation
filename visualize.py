@@ -49,7 +49,7 @@ def build_map() -> folium.Map:
     m = folium.Map(
         location=[46.5, 2.5],
         zoom_start=6,
-        tiles="CartoDB positron",   # clean light basemap for presentations
+        tiles="CartoDB positron",  
     )
 
     # ── Legend (HTML overlay) ────────────────────────────────────────────────
@@ -119,7 +119,6 @@ def build_map() -> folium.Map:
     return m
 
 
-# ─── MAIN ────────────────────────────────────────────────────────────────────
 
 if __name__ == "__main__":
     output = "france_grid.html"
