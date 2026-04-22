@@ -12,11 +12,6 @@ Lapse rate: 6.5 C per 1000m (standard environmental lapse rate)
 
 Usage:
     python predict.py <longitude> <latitude> <YYYY-MM-DD HH:00>
-
-Examples:
-    python predict.py 2.352 48.857 "2026-03-15 12:00"   # Paris
-    python predict.py 5.724 45.188 "2026-03-15 12:00"   # Grenoble
-    python predict.py -0.579 44.838 "2026-03-10 06:00"  # Bordeaux
 """
 
 import sys
@@ -28,7 +23,7 @@ from ingest import DB
 K_MIN        = 3
 K_MAX        = 8
 ELEV_SCALE   = 400.0
-LAPSE_RATE   = 0.0065   # degrees C per metre
+LAPSE_RATE   = 0.0065  
 
 
 def adaptive_k(elev_stddev: float) -> int:
