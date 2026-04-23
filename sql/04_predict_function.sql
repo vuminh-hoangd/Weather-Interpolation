@@ -1,9 +1,7 @@
 -- 04_predict_function.sql
 -- Adaptive kNN temperature prediction with lapse rate correction.
---
--- Parameters:
--- p_lon is longitude of query point
--- p_lat is latitude of query point
+
+-- p_lon is longitude of query point, p_lat is latitude of query point
 -- p_timestamp is UTC hour to predict
 -- p_elevation is elevation of query point in metres (optional — if NULL, uses the nearest grid point's elevation as proxy)
 
