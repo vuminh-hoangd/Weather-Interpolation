@@ -46,14 +46,10 @@ $$;
 
 -- Check: list all existing partitions and their row counts
 SELECT
-    child.relname                          AS partition,
+    child.relname AS partition,
     pg_get_expr(child.relpartbound, child.oid) AS bounds,
-    pg_relation_size(child.oid)            AS size_bytes,
-    (SELECT COUNT(*) FROM weather_observations
-     WHERE observed_at >= (SELECT lo FROM(
-         (SELECT lower(pg_get_expr(child.relpartbound, child.oid)::text)::timestamptz AS lo) t
-         LIMIT 1)
-    )                                      AS approx_rows
+    pg_size_pretty(pg_relation_size(child.oid)) AS size,
+    pg_stat_get_live_tuples(child.oid) AS approx_rows
 FROM   pg_inherits
 JOIN   pg_class parent ON pg_inherits.inhparent = parent.oid
 JOIN   pg_class child  ON pg_inherits.inhrelid  = child.oid
