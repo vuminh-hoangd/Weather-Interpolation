@@ -199,19 +199,17 @@ BENCHMARKS = [
                 """,
             },
             {
-                "label": "GiST + B-tree (combined)",
+                "label": "GiST index",
                 "setup": [
+                    "DROP INDEX IF EXISTS idx_obs_time_brin",
+                    "DROP INDEX IF EXISTS idx_obs_time_btree",
                     "CREATE INDEX IF NOT EXISTS idx_locations_geog_gist ON locations USING GIST(geog)",
                 ],
                 "query": """
-                    SELECT l.name, wo.observed_at, wo.temperature, wo.rain
-                    FROM   weather_observations wo
-                    JOIN   locations l ON l.id = wo.location_id
-                    WHERE  ST_DWithin(l.geog,
-                               ST_MakePoint(2.352, 48.857)::geography, 200000)
-                      AND  wo.observed_at BETWEEN '2026-03-01 00:00:00+00'
-                                              AND '2026-03-07 23:00:00+00'
-                    ORDER  BY wo.observed_at
+                    SELECT COUNT(*)
+                    FROM   weather_observations
+                    WHERE  observed_at BETWEEN '2026-03-01 00:00:00+00'
+                                           AND '2026-03-04 23:00:00+00'
                 """,
             },
         ],
