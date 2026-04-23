@@ -90,15 +90,9 @@ Open `psql` as the postgres superuser and run:
 CREATE DATABASE imperial_db;
 ```
 
-Then connect to it:
-
-```bash
-psql -U postgres -d imperial_db or \c imperial_db
-```
-
 ### 3b. Run the SQL setup scripts
 
-From the terminal inside the `Weather-Interpolation` folder, execute the `psql -f` commands in order, and not from inside psql (Note that `psql` must already be in PATH):
+From the terminal inside the `Weather-Interpolation` folder, execute the `psql -f` commands in order, and not from inside psql (Note that `psql` must already be in PATH. If on Linux, you may need to change `peer` to `md5` in `pg_hba.conf` and restart PostgreSQL before psql accepts password login. Then set the password: `ALTER USER postgres WITH PASSWORD 'Imperial';`):
 
 ```bash
 psql -U postgres -d imperial_db -f sql/01_schema.sql
