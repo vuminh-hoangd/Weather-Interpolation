@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>France Weather Grid — Project Report</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+          background: #f4f6f9; color: #222; line-height: 1.6; }
+  header { background: #1a3a5c; color: white; padding: 2rem 3rem; }
+  header h1 { font-size: 1.8rem; margin-bottom: 0.3rem; }
+  header p  { opacity: 0.75; font-size: 0.95rem; }
+  main { max-width: 1100px; margin: 2rem auto; padding: 0 2rem 4rem; }
+  h2 { font-size: 1.3rem; color: #1a3a5c; margin: 2rem 0 1rem;
+        padding-bottom: 0.4rem; border-bottom: 2px solid #d0dce8; }
+  h3 { font-size: 1.05rem; color: #333; margin: 1.2rem 0 0.5rem; }
+  .card { background: white; border-radius: 8px; padding: 1.5rem 2rem;
+           margin-bottom: 1.5rem; box-shadow: 0 1px 4px rgba(0,0,0,.08); }
+  table { width: 100%; border-collapse: collapse; font-size: 0.9rem; margin-top: 0.5rem; }
+  th { background: #1a3a5c; color: white; padding: 0.5rem 0.8rem; text-align: left; }
+  td { padding: 0.45rem 0.8rem; border-bottom: 1px solid #eee; }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: #f0f4f8; }
+  .badge { display:inline-block; padding: 0.15rem 0.5rem; border-radius: 4px;
+             font-size: 0.8rem; font-weight: 600; }
+  .fast { background: #d4edda; color: #155724; }
+  .mid  { background: #fff3cd; color: #856404; }
+  .metric { display:inline-block; background:#eef3f9; border-radius:8px;
+             padding: 0.8rem 1.4rem; margin: 0.4rem 0.4rem 0 0; text-align:center; }
+  .metric .val { font-size: 1.6rem; font-weight: 700; color: #1a3a5c; }
+  .metric .lbl { font-size: 0.78rem; color: #666; }
+</style>
+</head>
+<body>
+<header>
+  <h1>France Weather Grid — Query Optimization Report</h1>
+  <p>Generated 2026-04-23 19:59:13 &nbsp;|&nbsp; Data: March 2026 &nbsp;|&nbsp;
+     Grid: France 0.18° (~3,800 points, ~20 km) &nbsp;|&nbsp; Test zones: 10 cities &nbsp;|&nbsp; k=5</p>
+</header>
+<main>
+
+<h2>1. Project Overview</h2>
+<div class="card">
+  <p>Hourly weather data (temperature, humidity, rain, soil temperature) is fetched from
+     <strong>Open-Meteo</strong> for a 0.18° latitude/longitude grid covering France (~3,800 points, ~20 km spacing)
+     and stored in <strong>PostgreSQL + PostGIS</strong> with monthly table partitioning.
+     Ten French cities are withheld as test zones to evaluate spatial generalisation of a
+     <strong>kNN Inverse-Distance Weighting</strong> temperature prediction model implemented
+     in SQL and Python. The core deliverable benchmarks GiST, B-tree, and BRIN indexes against
+     unindexed sequential scans across four spatial and temporal query patterns.</p>
+</div>
+
+<h2>2. Query Benchmark Results</h2>
+
+<div class="card">
+  <h3>Speedup Overview — Best Index vs. Sequential Scan</h3>
+  <p style="color:#555;font-size:.9rem;margin-bottom:.8rem">
+    How many times faster is the best indexed strategy compared to a full sequential scan, per benchmark type.
+  </p>
+  <div style="max-width:700px; margin: 0.5rem auto;">
+    <canvas id="speedupOverview"></canvas>
+  </div>
+  <script>
+  new Chart(document.getElementById('speedupOverview'), {
+    type: 'bar',
+    data: {
+      labels: ['kNN Spatial Search', 'Radius Search (ST_DWithin)', 'Bounding Box Search (&&)', 'Time-Range Query'],
+      datasets: [{
+        label: 'Best speedup (x times faster)',
+        data: [67.7, 31.7, 1.5, 1.1],
+        backgroundColor: [
+          'rgba(26, 58, 92, 0.85)',
+          'rgba(40, 167, 69, 0.80)',
+          'rgba(255, 193, 7, 0.85)',
+          'rgba(108, 117, 125, 0.80)',
+        ],
+        borderRadius: 5,
+      }]
+    },
+    options: {
+      indexAxis: 'y',
+      responsive: true,
+      plugins: {
+        legend: { display: false },
+        title: { display: true, text: 'Index Speedup by Query Type', font: { size: 14 } }
+      },
+      scales: {
+        x: {
+          type: 'logarithmic',
+          title: { display: true, text: 'Speedup (log scale)' },
+          ticks: {
+            callback: function(v) { return v + 'x'; }
+          }
+        }
+      }
+    }
+  });
+  </script>
+</div>
+
+
+<div class="card">
+  <h3>kNN Spatial Search</h3>
+  <p style="color:#555;font-size:.9rem;margin-bottom:.8rem">Find 20 nearest grid points to a query location (lon, lat) to compute elevation stddev, then find k nearest training observations at the query timestamp — benchmarked at Paris (48.857°N, 2.352°E).</p>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:2rem;align-items:start;margin-top:0.8rem">
+    <table>
+      <thead><tr><th>Strategy</th><th>Execution Time</th><th>Speedup vs baseline</th></tr></thead>
+      <tbody><tr><td>No index — step 1 only (seq scan)</td><td>29.57 ms</td><td>baseline</td></tr>
+<tr><td>No index — full pipeline (both searches)</td><td>22.68 ms</td><td>baseline</td></tr>
+<tr><td>GiST — step 1 only (20 neighbours)</td><td>0.44 ms</td><td><span class="badge fast">67.7×</span></td></tr>
+<tr><td>GiST — full pipeline (both searches)</td><td>0.49 ms</td><td><span class="badge fast">46.1×</span></td></tr>
+</tbody>
+    </table>
+    <div><canvas id="benchChart_knn"></canvas></div>
+  </div>
+  <script>
+  new Chart(document.getElementById('benchChart_knn'), {
+    type: 'bar',
+    data: {
+      labels: ['No index — step 1 only (seq scan)', 'No index — full pipeline (both searches)', 'GiST — step 1 only (20 neighbours)', 'GiST — full pipeline (both searches)'],
+      datasets: [{
+        label: 'Execution time (ms)',
+        data: [29.57, 22.68, 0.44, 0.49],
+        backgroundColor: ['rgba(220,53,69,0.80)', 'rgba(26,58,92,0.80)', 'rgba(26,58,92,0.80)', 'rgba(26,58,92,0.80)'],
+        borderRadius: 4,
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: {
+        legend: { display: false },
+        title: { display: true, text: 'Execution Time (ms) — log scale', font: { size: 12 } }
+      },
+      scales: {
+        y: {
+          type: 'logarithmic',
+          title: { display: true, text: 'ms (log scale)' },
+          ticks: { callback: function(v) { return v + ' ms'; } }
+        },
+        x: { ticks: { maxRotation: 20, font: { size: 11 } } }
+      }
+    }
+  });
+  </script>
+</div>
+<div class="card">
+  <h3>Radius Search (ST_DWithin)</h3>
+  <p style="color:#555;font-size:.9rem;margin-bottom:.8rem">All grid points within 15 km of Lyon (45.764°N, 4.836°E)</p>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:2rem;align-items:start;margin-top:0.8rem">
+    <table>
+      <thead><tr><th>Strategy</th><th>Execution Time</th><th>Speedup vs baseline</th></tr></thead>
+      <tbody><tr><td>No index (seq scan)</td><td>6.59 ms</td><td>baseline</td></tr>
+<tr><td>GiST index</td><td>0.21 ms</td><td><span class="badge fast">31.7×</span></td></tr>
+</tbody>
+    </table>
+    <div><canvas id="benchChart_radius"></canvas></div>
+  </div>
+  <script>
+  new Chart(document.getElementById('benchChart_radius'), {
+    type: 'bar',
+    data: {
+      labels: ['No index (seq scan)', 'GiST index'],
+      datasets: [{
+        label: 'Execution time (ms)',
+        data: [6.59, 0.21],
+        backgroundColor: ['rgba(220,53,69,0.80)', 'rgba(26,58,92,0.80)'],
+        borderRadius: 4,
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: {
+        legend: { display: false },
+        title: { display: true, text: 'Execution Time (ms) — log scale', font: { size: 12 } }
+      },
+      scales: {
+        y: {
+          type: 'logarithmic',
+          title: { display: true, text: 'ms (log scale)' },
+          ticks: { callback: function(v) { return v + ' ms'; } }
+        },
+        x: { ticks: { maxRotation: 20, font: { size: 11 } } }
+      }
+    }
+  });
+  </script>
+</div>
+<div class="card">
+  <h3>Bounding Box Search (&&)</h3>
+  <p style="color:#555;font-size:.9rem;margin-bottom:.8rem">All grid points in a region in central France (lat 45.5–47.5°N, lon 1.0–4.0°E)</p>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:2rem;align-items:start;margin-top:0.8rem">
+    <table>
+      <thead><tr><th>Strategy</th><th>Execution Time</th><th>Speedup vs baseline</th></tr></thead>
+      <tbody><tr><td>No index (seq scan)</td><td>3.35 ms</td><td>baseline</td></tr>
+<tr><td>GiST index</td><td>2.17 ms</td><td><span class="badge mid">1.5×</span></td></tr>
+<tr><td>B-tree index (lat/lon)</td><td>2.19 ms</td><td><span class="badge mid">1.5×</span></td></tr>
+</tbody>
+    </table>
+    <div><canvas id="benchChart_bbox"></canvas></div>
+  </div>
+  <script>
+  new Chart(document.getElementById('benchChart_bbox'), {
+    type: 'bar',
+    data: {
+      labels: ['No index (seq scan)', 'GiST index', 'B-tree index (lat/lon)'],
+      datasets: [{
+        label: 'Execution time (ms)',
+        data: [3.35, 2.17, 2.19],
+        backgroundColor: ['rgba(220,53,69,0.80)', 'rgba(26,58,92,0.80)', 'rgba(26,58,92,0.80)'],
+        borderRadius: 4,
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: {
+        legend: { display: false },
+        title: { display: true, text: 'Execution Time (ms) — log scale', font: { size: 12 } }
+      },
+      scales: {
+        y: {
+          type: 'logarithmic',
+          title: { display: true, text: 'ms (log scale)' },
+          ticks: { callback: function(v) { return v + ' ms'; } }
+        },
+        x: { ticks: { maxRotation: 20, font: { size: 11 } } }
+      }
+    }
+  });
+  </script>
+</div>
+<div class="card">
+  <h3>Time-Range Query</h3>
+  <p style="color:#555;font-size:.9rem;margin-bottom:.8rem">Row count from 01/03/2026 to 04/03/2026</p>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:2rem;align-items:start;margin-top:0.8rem">
+    <table>
+      <thead><tr><th>Strategy</th><th>Execution Time</th><th>Speedup vs baseline</th></tr></thead>
+      <tbody><tr><td>No index (seq scan)</td><td>773.47 ms</td><td>baseline</td></tr>
+<tr><td>BRIN index</td><td>740.49 ms</td><td><span class="badge mid">1.0×</span></td></tr>
+<tr><td>B-tree index</td><td>693.35 ms</td><td><span class="badge mid">1.1×</span></td></tr>
+<tr><td>GiST index</td><td>773.98 ms</td><td><span class="badge mid">1.0×</span></td></tr>
+</tbody>
+    </table>
+    <div><canvas id="benchChart_time"></canvas></div>
+  </div>
+  <script>
+  new Chart(document.getElementById('benchChart_time'), {
+    type: 'bar',
+    data: {
+      labels: ['No index (seq scan)', 'BRIN index', 'B-tree index', 'GiST index'],
+      datasets: [{
+        label: 'Execution time (ms)',
+        data: [773.47, 740.49, 693.35, 773.98],
+        backgroundColor: ['rgba(220,53,69,0.80)', 'rgba(26,58,92,0.80)', 'rgba(26,58,92,0.80)', 'rgba(26,58,92,0.80)'],
+        borderRadius: 4,
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: {
+        legend: { display: false },
+        title: { display: true, text: 'Execution Time (ms) — log scale', font: { size: 12 } }
+      },
+      scales: {
+        y: {
+          type: 'logarithmic',
+          title: { display: true, text: 'ms (log scale)' },
+          ticks: { callback: function(v) { return v + ' ms'; } }
+        },
+        x: { ticks: { maxRotation: 20, font: { size: 11 } } }
+      }
+    }
+  });
+  </script>
+</div>
+
+<h2>3. Temperature Prediction — Strategy Comparison</h2>
+<div class="card">
+  <p>Three prediction strategies are compared across all 10 test-zone cities for March 2026.
+     Ten French cities are withheld as test zones — their grid points are excluded from training
+     so that predictions must rely on surrounding observations, giving an honest measure of
+     spatial generalisation error.</p>
+  <ul style="margin: 0.6rem 0 0.4rem 1.4rem; font-size: 0.92rem; color: #444;">
+    <li><strong>Fixed k=5</strong> — baseline: always use 5 nearest training neighbours, no elevation correction.</li>
+    <li><strong>Adaptive k</strong> — k chosen per query from elevation std dev of 20 nearest neighbours:
+        k = clip(round(8 − 5 × stddev / 400), 3, 8). Flat terrain → k=8; mountainous → k=3.</li>
+    <li><strong>Adaptive k + Lapse Rate</strong> — each neighbour's temperature is corrected to the query
+        elevation before IDW: T<sub>corr</sub> = T<sub>nbr</sub> + 0.0065 × (elev<sub>nbr</sub> − elev<sub>query</sub>).</li>
+  </ul>
+  <p style="margin: 0.8rem 0 1rem; font-size:0.92rem; background:#eef3f9; padding:0.7rem 1rem; border-radius:6px;">
+    <strong>Best strategy: Adaptive k + Lapse Rate</strong> — wins in 8 out of 10 cities, reducing average MAE
+    by 28.6% over the fixed k=5 baseline. This is the strategy used when a user queries
+    <em>predict_temperature(longitude, latitude, timestamp)</em>.
+  </p>
+
+  <h3>MAE Comparison by City</h3>
+  <div style="max-width:860px; margin: 0.8rem auto 1.5rem;">
+    <canvas id="strategyMaeChart"></canvas>
+  </div>
+  <script>
+  new Chart(document.getElementById('strategyMaeChart'), {
+    type: 'bar',
+    data: {
+      labels: ['Avignon', 'Bordeaux', 'Grenoble', 'Lille', 'Lyon', 'Nantes', 'Paris', 'Rennes', 'Strasbourg', 'Toulouse'],
+      datasets: [
+        {
+          label: 'Fixed k=5',
+          data: [0.905, 0.306, 1.419, 0.207, 0.758, 0.413, 0.371, 0.352, 0.578, 0.399],
+          backgroundColor: 'rgba(220, 53, 69, 0.78)',
+          borderRadius: 4,
+        },
+        {
+          label: 'Adaptive k',
+          data: [0.713, 0.31, 2.144, 0.218, 0.766, 0.431, 0.384, 0.346, 0.612, 0.407],
+          backgroundColor: 'rgba(255, 193, 7, 0.85)',
+          borderRadius: 4,
+        },
+        {
+          label: 'Adaptive k + Lapse Rate',
+          data: [0.58, 0.332, 0.764, 0.195, 0.573, 0.326, 0.369, 0.245, 0.586, 0.376],
+          backgroundColor: 'rgba(26, 58, 92, 0.85)',
+          borderRadius: 4,
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      plugins: {
+        legend: { position: 'top' },
+        title: { display: true, text: 'MAE per City — Three Strategies', font: { size: 14 } }
+      },
+      scales: {
+        y: { beginAtZero: true, title: { display: true, text: 'MAE (°C)' } },
+        x: { title: { display: true, text: 'City' } }
+      }
+    }
+  });
+  </script>
+
+  <h3 style="margin-top:1.5rem;">RMSE Comparison by City</h3>
+  <div style="max-width:860px; margin: 0.8rem auto 1.5rem;">
+    <canvas id="strategyRmseChart"></canvas>
+  </div>
+  <script>
+  new Chart(document.getElementById('strategyRmseChart'), {
+    type: 'bar',
+    data: {
+      labels: ['Avignon', 'Bordeaux', 'Grenoble', 'Lille', 'Lyon', 'Nantes', 'Paris', 'Rennes', 'Strasbourg', 'Toulouse'],
+      datasets: [
+        {
+          label: 'Fixed k=5',
+          data: [1.326, 0.41, 1.82, 0.291, 0.965, 0.557, 0.518, 0.458, 0.739, 0.551],
+          backgroundColor: 'rgba(220, 53, 69, 0.78)',
+          borderRadius: 4,
+        },
+        {
+          label: 'Adaptive k',
+          data: [1.017, 0.412, 2.59, 0.306, 0.977, 0.569, 0.528, 0.444, 0.774, 0.558],
+          backgroundColor: 'rgba(255, 193, 7, 0.85)',
+          borderRadius: 4,
+        },
+        {
+          label: 'Adaptive k + Lapse Rate',
+          data: [0.775, 0.428, 0.99, 0.28, 0.786, 0.457, 0.499, 0.358, 0.798, 0.513],
+          backgroundColor: 'rgba(26, 58, 92, 0.85)',
+          borderRadius: 4,
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      plugins: {
+        legend: { position: 'top' },
+        title: { display: true, text: 'RMSE per City — Three Strategies', font: { size: 14 } }
+      },
+      scales: {
+        y: { beginAtZero: true, title: { display: true, text: 'RMSE (°C)' } },
+        x: { title: { display: true, text: 'City' } }
+      }
+    }
+  });
+  </script>
+
+  <h3 style="margin-top:1.5rem;">Detailed Results</h3>
+  <table style="margin-top:0.5rem;">
+    <thead><tr>
+      <th>City</th>
+      <th>Fixed k=5 MAE</th><th>Fixed k=5 RMSE</th>
+      <th>Adaptive k MAE</th><th>Adaptive k RMSE</th>
+      <th>Adaptive+Lapse MAE</th><th>Adaptive+Lapse RMSE</th>
+      <th>Best</th>
+    </tr></thead>
+    <tbody><tr><td>Avignon</td><td>0.905</td><td>1.326</td><td>0.713</td><td>1.017</td><td>0.58</td><td>0.775</td><td><strong>Adaptive+Lapse</strong></td></tr>
+<tr><td>Bordeaux</td><td>0.306</td><td>0.41</td><td>0.31</td><td>0.412</td><td>0.332</td><td>0.428</td><td><strong>Fixed k=5</strong></td></tr>
+<tr><td>Grenoble</td><td>1.419</td><td>1.82</td><td>2.144</td><td>2.59</td><td>0.764</td><td>0.99</td><td><strong>Adaptive+Lapse</strong></td></tr>
+<tr><td>Lille</td><td>0.207</td><td>0.291</td><td>0.218</td><td>0.306</td><td>0.195</td><td>0.28</td><td><strong>Adaptive+Lapse</strong></td></tr>
+<tr><td>Lyon</td><td>0.758</td><td>0.965</td><td>0.766</td><td>0.977</td><td>0.573</td><td>0.786</td><td><strong>Adaptive+Lapse</strong></td></tr>
+<tr><td>Nantes</td><td>0.413</td><td>0.557</td><td>0.431</td><td>0.569</td><td>0.326</td><td>0.457</td><td><strong>Adaptive+Lapse</strong></td></tr>
+<tr><td>Paris</td><td>0.371</td><td>0.518</td><td>0.384</td><td>0.528</td><td>0.369</td><td>0.499</td><td><strong>Adaptive+Lapse</strong></td></tr>
+<tr><td>Rennes</td><td>0.352</td><td>0.458</td><td>0.346</td><td>0.444</td><td>0.245</td><td>0.358</td><td><strong>Adaptive+Lapse</strong></td></tr>
+<tr><td>Strasbourg</td><td>0.578</td><td>0.739</td><td>0.612</td><td>0.774</td><td>0.586</td><td>0.798</td><td><strong>Fixed k=5</strong></td></tr>
+<tr><td>Toulouse</td><td>0.399</td><td>0.551</td><td>0.407</td><td>0.558</td><td>0.376</td><td>0.513</td><td><strong>Adaptive+Lapse</strong></td></tr>
+</tbody>
+  </table>
+  <div style="margin-top:1.5rem;">
+   <div class="metric"><div class="val">0.571 °C</div><div class="lbl">Fixed k=5 avg MAE</div></div>
+   <div class="metric"><div class="val">0.633 °C</div><div class="lbl">Adaptive k avg MAE</div></div>
+   <div class="metric" style="background:#d4edda;"><div class="val" style="color:#155724;">0.435 °C</div><div class="lbl">Adaptive+Lapse avg MAE</div></div>
+   <div class="metric" style="background:#d4edda;"><div class="val" style="color:#155724;">−23.9%</div><div class="lbl">Overall MAE improvement</div></div>
+  </div>
+</div>
+
+<h2>4. Index Sizes on Disk</h2>
+<div class="card">
+  <table><thead><tr><th>Index</th><th>Size on disk</th></tr></thead><tbody><tr><td>idx_locations_geog_gist</td><td>280 kB</td></tr>
+<tr><td>idx_obs_time_brin</td><td>N/A (not created)</td></tr>
+<tr><td>idx_obs_time_btree</td><td>N/A (not created)</td></tr>
+<tr><td>idx_obs_loc_time</td><td>0 bytes</td></tr>
+</tbody></table>
+</div>
+
+</main>
+</body>
+</html>
